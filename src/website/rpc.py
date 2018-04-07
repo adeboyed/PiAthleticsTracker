@@ -11,7 +11,7 @@ def GetStatus():
 	
 	data = false
 	while not (data):
-		data = sock.recv(16)
+		data = sock.recv(1024)
 		connection.close()
 
 	return pickle.load( data )
