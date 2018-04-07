@@ -1,9 +1,12 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from rpc import GetStatus, StartRace
+
 from django.shortcuts import render
 
 # Create your views here.
 
 from django.http import HttpResponse, JsonResponse
-from .rpc import GetStatus, StartRace
 
 
 def index(request):
