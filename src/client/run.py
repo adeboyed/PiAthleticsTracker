@@ -10,18 +10,19 @@ If the lightgate is interuptted then we'll send that message
 
 '''
 MESSAGE_PULSE = "P";
+LIGHT_GATE_ON = "L";
+LIGHT_GATE_OFF = "O";
+
 print("PiAthleticsTracker: Client")
-
-
 
 # Define observer functions
 def handleLightGate( red, green, blue ):
-	radio.sendMessage( red + "," + green + "," + blue )	
+	if ( red > 200 ):
+		radio.sendMessage( LIGHT_GATE_ON )
+	else:
+		radio.sendMessage( LIGHT_GATE_OFF )	
 
-def handleMessagesFromServer( message ):
-	#Lol nothing to do
-
-setupReader( handleLightGate );
+lightgate.setupReader( handleLightGate )
 
 while True:
 	time.sleep( 5 )
