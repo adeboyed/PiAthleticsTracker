@@ -1,4 +1,3 @@
-<!doctype html>
 <htm class="no-js" lang="">
     <head>
         <meta charset="utf-8">
@@ -21,30 +20,65 @@
         <![endif]-->
         
 
-        {% if race_over %}
+        {% if started_race %}
         <!-- Add your site or application content here -->
         <p>Hello world! This is athletics tracker!</p>
-        {% else %}
-
-        <p id="race_start">This is the start of the race</p>
+        <p>You have started a race!</p>
+        <p id="race-time-desc">Time will display when race is over.</p>
 
         <script>
-$(document).ready(function() {
-  $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
-  var my_refresh = setInterval(function() {
-    $('#race_start').load('/get_time/');
-  }, 1000); // the "1000"
-});
+        $(document).ready(function() {
+           $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
+            var my_refresh = setInterval(function() {
+                $.ajax({
+                    url: '/get_time/',
+                    dataType: 'text',
+                    success: function (data) {
+                      var json = $.parseJSON(data);
+                      if (json.finished) {
+                        $('#race-time-desc').html("Your time is: <span id='race-time'></span>");
+                        $('#race-time').html(json.time);
+                      }
+                    },
+                })
+            }, 1000); // the "1000"
+        });
 
-</script>
+        </script>
+
+        {% else %}
+
+        <p>This is the start of the race</p>
+        <p id="pis_status" style="color: red">Can find other PI</p>
+        <p id="gate_status" style="color: red">Light gate set up</p>
+
+        <button onclick="location.href = '/start_race/';" disabled="True" id="start-button">Start Race!</button>
+
+        <script>
+        $(document).ready(function() {
+           $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
+            var my_refresh = setInterval(function() {
+                $.ajax({
+                    url: '/get_status/',
+                    dataType: 'text',
+                    success: function (data) {
+                      var json = $.parseJSON(data);
+                      $('#pis_status').css("color", (json.PIs ? "green" : "red"));
+                      $('#gate_status').css("color", (json.gate ? "green" : "red"));
+                      if (json.gate && json.PIs) {
+                        $('#start-button').removeAttr("disabled");
+                      }
+                    },
+                })
+            }, 1000); // the "1000"
+        });
+
+        </script>
         
         {% endif %}        
 
 
-        <script src="js/vendor/modernizr-3.5.0.min.js"></script>
         <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.2.1.min.js"><\/script>')</script>
-        <script src="js/plugins.js"></script>
-        <script src="js/main.js"></script>
 
         <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
         <script>

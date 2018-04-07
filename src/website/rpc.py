@@ -6,7 +6,7 @@ import pickle
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_address = ('localhost', 10000)
 
-def readStatus():
+def GetStatus():
 	sock.connect(server_address)
 	
 	data = false
@@ -14,4 +14,7 @@ def readStatus():
 		data = sock.recv(16)
 		connection.close()
 
-	return pickle.load( data )	
+	return pickle.load( data )
+
+def StartRace():
+    pass
