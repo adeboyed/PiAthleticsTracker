@@ -4,6 +4,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common import radio, lightgate
 import time
 import alsaaudio
+import socket
+import sys
+import pickle
 
 '''
 
@@ -36,8 +39,8 @@ def millis():
 
 def handleMessagesFromClient( message ):
 	if ( message == MESSAGE_PULSE ):
-		if ( clientStatus < 2 ):
-			clientStatus += 2
+		if ( clientStatus < 3 ):
+			clientStatus += 1
 	elif ( message == LIGHT_GATE_ON ):
 		lightGameCaptured = true
 	elif ( message == LIGHT_GATE_OFF ):
@@ -48,8 +51,30 @@ def handleMessagesFromClient( message ):
 		
 radio.setupReader( handleMessagesFromClient )
 
-
 # Basically we want to decrement the status in case we lose the client
+def decrementClientStatus():
+	clientStatus -= 1
+	time.sleep(10)	
+
+def clientHandler( c = None ):
+	data = {
+		'clientStatus': clientStatus,
+		'lightGateCaptured': lightGateCaptured,
+		'raceInProgress': ( gameStartingSoon or inGame ),
+		'lastRaceTime': inGame 	
+	}
+	c.sendto(data, client)
+	c.close();
+
+s = socket(AF_INET, SOCK_STREAM)
+server_address = ('localhost', 10000)
+s.bind( server_address )
+s.listen(5)
+
+# Start all of the threads
+Thread( target=decrementClientStatus ).start()
+
 while True:
-	clientStatus -= 1;
-	time.sleep(10)
+	c, addr = s.accept()
+	Thread(target=clientHandler, kwargs={ 'c' : c } ).start()
+
