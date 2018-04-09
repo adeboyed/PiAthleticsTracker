@@ -8,7 +8,7 @@ class Reader(threading.Thread):
   def run(self, processor):
     print("Started Reader")
     ackPL = [1]
-    while(true):
+    while(True):
       mutex.acquire()
       if (radio.available(0) ):
         receivedMessage = []
@@ -70,9 +70,9 @@ def sendMessage( message ):
 		radio.read(returnedPL, radio.getDynamicPayloadSize())
 		print("Our returned payload was {}".format(returnedPL))
 		mutex.release()
-		return true	
+		return True	
 	else:
 		print("No payload received")
 		mutex.release()
-		return false
+		return False
 		
