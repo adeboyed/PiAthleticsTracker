@@ -14,7 +14,7 @@ ver = bus.read_byte(0x29)
 setup = false
 
 if ver == 0x44:
-	print "Device found\n"
+	print ("Device found\n")
 	bus.write_byte(0x29, 0x80|0x00) # 0x00 = ENABLE register
 	bus.write_byte(0x29, 0x01|0x02) # 0x01 = Power on, 0x02 RGB sensors enabled
 	bus.write_byte(0x29, 0x80|0x14) # Reading results start register 14, LSB then MSB
@@ -31,6 +31,6 @@ def setupReader(processor):
 		blue = data[7] << 8 | data[6]
 		processor( red, green, blue )
 		crgb = "Light Gate: C: %s, R: %s, G: %s, B: %s\n" % (clear, red, green, blue)
-		print crgb
+		print (crgb)
 		time.sleep(1)
 
