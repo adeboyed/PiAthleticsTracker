@@ -1,8 +1,35 @@
 import RPi.GPIO as GPIO
-from lib_nrf24 import NRF24
+from common.lib_nrf24 import NRF24
 import time
 import spidev
 import threading
+
+class Reader(threading.Thread):
+  def run(self, processor):
+    print("Started Reader")
+    ackPL = [1]
+    while(true):
+      mutex.acquire()
+      if (radio.available(0) ):
+        receivedMessage = []
+        radio.read(receivedMessage, radio.getDynamicPayloadSize())
+        print("Received: {}".format(receivedMessage))
+
+        print("Translating the receivedMessage into unicode characters")
+        string = ""
+        for n in receivedMessage:
+            # Decode into standard unicode set
+            if (n >= 32 and n <= 126):
+                string += chr(n)
+
+        processor(string)
+        print( "Recieved " + string )
+
+        radio.writeAckPayload(1, ackPL, len(ackPL))
+        print("Loaded payload reply of {}".format(ackPL))
+      else:
+        time.sleep( 1 / 100 )
+      mutex.release()
 
 # Setup all of the radio information
 GPIO.setmode(GPIO.BCM)
@@ -24,7 +51,7 @@ radio.openReadingPipe(0, pipes[1])
 radio.printDetails()
 
 # Asynchronous radio thread
-reader = MyThread(name = "Thread-{}".format(2))
+reader = Reader(name = "Thread-{}".format(2))
 
 # Used for acquiring locks on the radio
 mutex = threading.Lock()
@@ -49,29 +76,3 @@ def sendMessage( message ):
 		mutex.release()
 		return false
 		
-class Reader(threading.Thread):
-	def run(self, processor):
-		print("Started Reader")
-		ackPL = [1]
-		while(true):
-			mutex.acquire()
-			if (radio.available(0) ):
-				receivedMessage = []
-				radio.read(receivedMessage, radio.getDynamicPayloadSize())
-				print("Received: {}".format(receivedMessage))
-		 
-				print("Translating the receivedMessage into unicode characters")
-				string = ""
-				for n in receivedMessage:
-						# Decode into standard unicode set
-						if (n >= 32 and n <= 126):
-								string += chr(n)
-				
-				processor(string)
-				print( "Recieved " + string )
-				
-				radio.writeAckPayload(1, ackPL, len(ackPL))
-				print("Loaded payload reply of {}".format(ackPL))
-			else:
-				time.sleep( 1 / 100 )
-			mutex.release()
