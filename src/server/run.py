@@ -27,10 +27,10 @@ print("PiAthleticsTracker: Server")
 
 # Important state to keep
 clientStatus = 0
-lightGateCaptured = false
+lightGateCaptured = False
 
-gameStartingSoon = false
-inGame = false
+gameStartingSoon = False
+inGame = False
 startGameTime = 0
 lastGameTime = 0
 
@@ -50,12 +50,12 @@ def handleMessagesFromClient( message ):
 		if ( clientStatus < 3 ):
 			clientStatus += 1
 	elif ( message == LIGHT_GATE_ON ):
-		lightGameCaptured = true
+		lightGameCaptured = True
 	elif ( message == LIGHT_GATE_OFF ):
-		lightGateCaptured = false
+		lightGateCaptured = False
 		if ( inGame ):
 			lastGameTime = millis() - startGameTime
-			inGame = false	
+			inGame = False
 		
 radio.setupReader( handleMessagesFromClient )
 
@@ -65,7 +65,7 @@ def decrementClientStatus():
 	time.sleep(10)	
 
 def startRace():
-	gameStartingSoon = true
+	gameStartingSoon = True
   # Wait 10 seconds more starting race
 	time.sleep(10)
 
@@ -82,8 +82,8 @@ def startRace():
   # Play track for go
 	
 
-	gameStartingSoon = false
-	inGame = true
+	gameStartingSoon = False
+	inGame = True
 	startGameTime = millis()
 
 def statusClientHandler( c = None ):
