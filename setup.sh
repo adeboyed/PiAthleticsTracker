@@ -1,10 +1,12 @@
 # Derived from http://invent.module143.com/daskal_tutorial/raspberry-pi-3-wireless-pi-to-pi-python-communication-with-nrf24l01/
-sudo apt-get -y install unzip
-sudo apt-get -y install python3-dev
-sudo apt-get -y install vim
-sudo apt-get -y install python3-rpi.gpio
-sudo apt-get -y install python-alsaaudio
-sudo apt-get -y install python3-smbus
+apt-get -y install unzip
+apt-get -y install python3-dev
+apt-get -y install vim
+apt-get -y install python3-rpi.gpio
+apt-get -y install python3-pip
+apt-get -y install python3-alsaaudio
+apt-get -y install python3-smbus
+apt-get install libasound2-dev
 wget https://github.com/Gadgetoid/py-spidev/archive/master.zip
 unzip master.zip
 rm master.zip
