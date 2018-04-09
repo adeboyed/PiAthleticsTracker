@@ -3,7 +3,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from common import radio
 import time
-import alsaaudio
+from subprocess import call
 import socket
 import sys
 import pickle
@@ -16,8 +16,7 @@ import random
 '''
 
 # Set volume to 100%
-m = alsaaudio.Mixer()
-m.setvolume(100)
+call(["/usr/bin/amixer", "-q", "set", "Digital", "100"])
 
 MESSAGE_PULSE = "P";
 LIGHT_GATE_ON = "L";
