@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common import radio
 import time
 from subprocess import call
-import socket
+from socket import *
 import sys
 import pickle
 import random
