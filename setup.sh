@@ -4,6 +4,7 @@ sudo apt-get -y install python3-dev
 sudo apt-get -y install vim
 sudo apt-get -y install python3-rpi.gpio
 sudo apt-get -y install python-alsaaudio
+sudo apt-get -y install python3-smbus
 wget https://github.com/Gadgetoid/py-spidev/archive/master.zip
 unzip master.zip
 rm master.zip
