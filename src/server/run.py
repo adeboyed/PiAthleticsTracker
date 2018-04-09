@@ -68,17 +68,17 @@ def decrementClientStatus():
 def startRace():
 	gameStartingSoon = true
   # Wait 10 seconds more starting race
-  time.sleep( 10 )
+	time.sleep(10)
 
   # Play track for ready
 
   # Wait 5 seconds
-  time.sleep ( 5 )
+	time.sleep ( 5 )
 
   # Play track for set
 
   # Wait between 1 and 3 seconds
-  time.sleep ( random.randint(1, 300) / 3 )
+	time.sleep ( random.randint(1, 300) / 3 )
 
   # Play track for go
 	
@@ -105,11 +105,11 @@ def raceClientHandler( c = None ):
 
 def statusSocket():
 	c, addr = status_socket.accept()
-  Thread(target=statusClientHandler, kwargs={ 'c' : c } ).start()
+	Thread(target=statusClientHandler, kwargs={ 'c' : c } ).start()
 
 def raceSocket():
 	c, addr = race_socket.accept()
-  Thread(target=raceClientHandler, kwargs={ 'c' : c } ).start()
+	Thread(target=raceClientHandler, kwargs={ 'c' : c } ).start()
 
 # Start all of the threads
 Thread( target=decrementClientStatus ).start()
