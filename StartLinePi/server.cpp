@@ -36,8 +36,8 @@ mutex radioLock;
 
 bool radioListening = false;
 
-unsigned long lastClientInteration = ULONG_MAX;
-unsigned long lastSyncInteration = ULONG_MAX;
+unsigned long lastClientInteraction = ULONG_MAX;
+unsigned long lastSyncInteraction = ULONG_MAX;
 bool lightGateCaptured = false;
 
 bool raceStartingSoon = false;
@@ -46,7 +46,7 @@ int startRaceTime = 0;
 int lastRaceTime = 0;
 
 bool clientAlive(){
-	return ( lastClientInteration - millis() ) < TIMEOUT_REQ_WAITING;
+	return ( lastClientInteraction - millis() ) < TIMEOUT_REQ_WAITING;
 } 
 
 void startRace(){
@@ -57,7 +57,7 @@ void startRace(){
 	raceStartingSoon = true;
 
 	// Wait 10 seconds more starting race
-    sleep(10);
+	sleep(10);
 
 
 	//Get client ready
@@ -65,17 +65,17 @@ void startRace(){
 	// Play track for ready
 
 	//Wait 5 seconds
-    sleep ( 5 );
+	sleep ( 5 );
 
 	//Play track for set
 
 	//Wait between 1 and 3 seconds
-    delay( (rand() % 2000) + 1000 );
+	delay( (rand() % 2000) + 1000 );
 
 	//Play track for go
 
-    raceStartingSoon = false;
-    inRace = true;
+	raceStartingSoon = false;
+	inRace = true;
 	startRaceTime = millis();
 }
 
@@ -83,18 +83,18 @@ void handle_web_clients(){
 	//Setup server socket
 	int serverSock=socket(AF_INET, SOCK_STREAM, 0);
 
-    sockaddr_in serverAddr;
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = IN_SERVER_PORT;
-    serverAddr.sin_addr.s_addr = INADDR_ANY;
+	sockaddr_in serverAddr;
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = IN_SERVER_PORT;
+	serverAddr.sin_addr.s_addr = INADDR_ANY;
 
 	bind(serverSock, (struct sockaddr*)&serverAddr, sizeof(struct sockaddr));
 	listen(serverSock,1);
 
 	while (true){
 		sockaddr_in clientAddr;
-        socklen_t sin_size = sizeof(struct sockaddr_in);
-        int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
+		socklen_t sin_size = sizeof(struct sockaddr_in);
+		int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
 		if ( clientSock > 0 ){
 			printf("Valid web client socket request \n");
 			string output = "{ \"clientStatus\": ";
@@ -109,7 +109,7 @@ void handle_web_clients(){
 
 			char char_array[ output.length() ];
 			strcpy(char_array, output.c_str());
-			
+
 			write( clientSock, char_array, strlen(char_array) );
 			close( clientSock );
 		}else {
@@ -121,18 +121,18 @@ void handle_web_clients(){
 void handle_web_clients_race(){
 	int serverSock=socket(AF_INET, SOCK_STREAM, 0);
 
-    sockaddr_in serverAddr;
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = OUT_SERVER_PORT;
-    serverAddr.sin_addr.s_addr = INADDR_ANY;
+	sockaddr_in serverAddr;
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = OUT_SERVER_PORT;
+	serverAddr.sin_addr.s_addr = INADDR_ANY;
 
 	bind(serverSock, (struct sockaddr*)&serverAddr, sizeof(struct sockaddr));
 	listen(serverSock, 1);
 
 	while (true){
 		sockaddr_in clientAddr;
-        socklen_t sin_size = sizeof(struct sockaddr_in);
-        int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
+		socklen_t sin_size = sizeof(struct sockaddr_in);
+		int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
 		if ( clientSock > 0 ){
 			printf("Web Client requested start of race \n");
 			close( clientSock );
@@ -143,30 +143,29 @@ void handle_web_clients_race(){
 
 void radioListen(){
 	while (true){
-		printf("Radio Listen Thread: started \n");
 		radioLock.lock();
 		if ( radio.available() ){
 			printf("Radio Listen Thread: radio available \n");
 			unsigned long payload;
-			
+
 			while(radio.available()){
 				radio.read( &payload, sizeof( unsigned long ) );
-            }
+			}
 			radio.stopListening(); radioListening = false;
 
-			printf("Radio Listen Thread: Recieved: %lu", payload );
+			printf("Radio Listen Thread: Recieved: %lu \n", payload );
 
 			if ( payload == REQ_TIME ){
 				unsigned long got_time = millis();
 				radio.write( &got_time, sizeof(unsigned long) );
 				radio.startListening(); radioListening = true;
-				lastClientInteration = millis();
-				lastSyncInteration = millis();
+				lastClientInteraction = millis();
+				lastSyncInteraction = millis();
 				delay(400);
 			}else if ( inRace ){
 				radio.write ( &REQ_ACK, sizeof (unsigned long) );				
 				radio.startListening(); radioListening = true;
-                lastClientInteration = millis();
+				lastClientInteraction = millis();
 
 				//Finish Race
 				inRace = false;
@@ -179,9 +178,10 @@ void radioListen(){
 
 void clientCheck(){
 	while (true){
-		printf("Client Check Thread: running \n" );
-		if ( clientAlive() && ( lastSyncInteration - millis() ) < 2000 ){
-			while (true) radioLock.lock();
+		bool alive_client = clientAlive();
+		printf( active_client ? "Client Check Thread: clientAlive" : "Client Check Thread: clientDead" ); 
+		if ( clientAlive() && ( lastSyncInteraction - millis() ) > 2000 ){
+			radioLock.lock();
 			printf("Client Check Thread: sending heartbeat \n ");
 			radio.stopListening();
 
@@ -189,16 +189,16 @@ void clientCheck(){
 			unsigned long started_waiting_at = millis();
 
 			bool timeout = false;
-            while ( ! radio.available() && ! timeout ) {
-                if (millis() - started_waiting_at > TIMEOUT_REQ_TIME )
-                    timeout = true;
-            }
+			while ( ! radio.available() && ! timeout ) {
+				if (millis() - started_waiting_at > TIMEOUT_REQ_TIME )
+					timeout = true;
+			}
 
 			if ( !timeout ){
 				unsigned long response;
 				radio.read( &response, sizeof( unsigned long ) );
 				if ( response == REQ_ACK ){
-					lastClientInteration = millis();
+					lastClientInteraction = millis();
 				}
 			}
 
@@ -216,10 +216,13 @@ int main(int argc, char** argv){
 	radio.setRetries(15,15);
 	// Dump the configuration of the rf unit for debugging
 	radio.printDetails();
-	
+
 	//Open pipes
 	radio.openWritingPipe(pipes[1]);
 	radio.openReadingPipe(1,pipes[0]);
+
+	//Start Listening
+	radio.startListening();
 
 	//Turn up the volume
 	system("amixer set PCM -- 100%");

@@ -103,13 +103,15 @@ void cycle(){
 		}
 
 		if ( timeout ){
-			printf("Have not recieved anything from server in 10 seconds, will enter time sync");
+			printf("Have not recieved anything from server in 10 seconds, will enter time sync \n");
 			offset_tries = 1;
-			current_state = STATE_WAITING;
+			current_state = STATE_TIME_SYNCING;
 		}else {
-			int req_code;
+			unsigned long req_code;
 			radio.read( &req_code, sizeof( unsigned long ) );
 			
+			printf("Recieved %lu from the server \n", req_code );
+
 			//Send back an ACK
 			radio.stopListening();
             radio.write( &REQ_ACK, sizeof( unsigned long ) );	
