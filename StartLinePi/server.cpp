@@ -183,11 +183,12 @@ void clientCheck(){
 		if ( alive_client && ( lastSyncInteraction - millis() ) > 2000 ){
 			radioLock.lock();
 			printf("Client Check Thread: sending heartbeat \n ");
+			
 			radio.stopListening();
-
 			radio.write( &REQ_WAIT, sizeof( unsigned long ) );
-			unsigned long started_waiting_at = millis();
+			radio.startListening();			
 
+			unsigned long started_waiting_at = millis();
 			bool timeout = false;
 			while ( ! radio.available() && ! timeout ) {
 				if (millis() - started_waiting_at > TIMEOUT_REQ_TIME )
@@ -197,12 +198,12 @@ void clientCheck(){
 			if ( !timeout ){
 				unsigned long response;
 				radio.read( &response, sizeof( unsigned long ) );
+				printf("Recieved %lu from client \n");
 				if ( response == REQ_ACK ){
 					lastClientInteraction = millis();
 				}
 			}
 
-			radio.startListening();
 			radioLock.unlock();
 		}
 		delay( 2000 );	
