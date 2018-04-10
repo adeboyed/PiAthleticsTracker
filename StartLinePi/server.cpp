@@ -70,7 +70,7 @@ void startRace(){
 	//Play track for set
 
 	//Wait between 1 and 3 seconds
-    time.sleep ( random.randint(1, 300) / 3 )
+    sleep ( random.randint(1, 300) / 3 )
 
 	//Play track for go
 

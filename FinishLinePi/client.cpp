@@ -155,12 +155,12 @@ void cycle(){
 			}
 
 			if ( !timeout ){
-				unsigned long got_time;
-				radio.read( &got_time, sizeof( unsigned long ) );
+				unsigned long response;
+				radio.read( &response, sizeof( unsigned long ) );
 
-				if ( got_req == STATE_WAITING ){
+				if ( response == STATE_WAITING ){
 					send_tries = 0;
-				}else if ( got_req == STATE_IN_RACE ){
+				}else if ( response == STATE_IN_RACE ){
 					send_tries++;
 				} 
 			}else {
