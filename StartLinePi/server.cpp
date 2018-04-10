@@ -25,7 +25,7 @@ const int TIMEOUT_REQ_WAITING = 10000;
 const unsigned long REQ_ACK = 1;
 const unsigned long REQ_TIME = 100;
 const unsigned long REQ_WAIT = 200;
-const unsigned long  REQ_RACE = 300;
+const unsigned long REQ_RACE = 300;
 
 RF24 radio(22,0);
 
@@ -34,7 +34,6 @@ const uint8_t pipes[][6] = {"1Node","2Node"};
 
 mutex radioLock;
 
-int current_state = STATE_TIME_SYNCING;
 bool radioListening = false;
 
 unsigned long lastClientInteration = ULONG_MAX;
@@ -171,7 +170,7 @@ void clientCheck(){
 			while (true) radioLock.lock();
 			radio.stopListening();
 
-			radio.write( &REQ_REQUEST, sizeof( unsigned long ) );
+			radio.write( &REQ_WAIT, sizeof( unsigned long ) );
 
 			bool timeout = false;
             while ( ! radio.available() && ! timeout ) {

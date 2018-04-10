@@ -35,9 +35,10 @@ void cycle(){
 	if ( current_state == STATE_TIME_SYNCING ){
 		printf("STATE: TIME SYNCING");
 		
-		if ( radioListening )
+		if ( radioListening ){
 			radio.stopListening(); radioListening = false;
-		
+		}		
+
 		unsigned long started_waiting_at = millis();
 		bool ok = radio.write( &REQ_TIME, sizeof( unsigned long ) );
 		if ( !ok ){
@@ -90,9 +91,11 @@ void cycle(){
 		sleep(1);			
 	} else if ( current_state == STATE_WAITING ) {
 		printf("STATE: WAITNG \n" );
-		if ( !radioListening )
+		if ( !radioListening ){
 			radio.startListening(); radioListening = true;
-		
+		}
+
+		unsigned long started_waiting_at = millis();
 		bool timeout = false;
 		while ( ! radio.available() && ! timeout ) {
 			if (millis() - started_waiting_at > TIMEOUT_REQ_WAITING )
@@ -131,8 +134,9 @@ void cycle(){
 		int send_tries = 3;
 
 		while ( send_tries > 0 ){
-			if ( radioListening )
+			if ( radioListening ){
 				radio.stopListening(); radioListening = false;
+			}
 
 			bool ok = radio.write( &measured_time, sizeof( unsigned long ) );
 			if ( !ok ){
