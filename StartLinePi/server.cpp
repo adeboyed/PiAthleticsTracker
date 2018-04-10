@@ -65,17 +65,17 @@ void startRace(){
 	// Play track for ready
 
 	//Wait 5 seconds
-    sleep ( 5 )
+    sleep ( 5 );
 
 	//Play track for set
 
 	//Wait between 1 and 3 seconds
-    sleep ( random.randint(1, 300) / 3 )
+    delay( (rand() % 2000) + 1000 );
 
 	//Play track for go
 
-    raceStartingSoon = false
-    inRace = true
+    raceStartingSoon = false;
+    inRace = true;
 	startRaceTime = millis();
 }
 

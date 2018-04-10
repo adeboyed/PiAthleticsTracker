@@ -121,7 +121,7 @@ void cycle(){
 				sleep (1);
 			}			
 		}	
-	} else if ( current_state = STATE_IN_RACE ){
+	} else if ( current_state == STATE_IN_RACE ){
 		printf("STATE: IN_RACE \n");
 
 		//Simulate race
