@@ -92,13 +92,15 @@ void handle_web_clients(){
 	listen(serverSock,1);
 
 	while (true){
-		string output = 
-			"{" +
-				"\"clientStatus\": " + clientAlive() + ", " +
-				"\"lightGateCaptured\": " + lightGateCaptured + ", " +
-				"\"raceInProgress\" : " + ( raceStartingSoon || inRace ) + ", " +
-				"\"lastRameTime\" : " + lastRaceTime +
-			"}";
+		string output = "{ \"clientStatus\": ";
+		output.append( clientAlive() );
+		output.append( ", \"lightGateCaptured\": ");
+		output.append( lightGateCaptured );
+		output.append( ", \"raceInProgress\" : ");
+		output.append( ( raceStartingSoon || inRace ) );
+		output.append( ", \"lastRameTime\" : " );
+		output.append( lastRaceTime );
+		output.append( "}" );
 
 		char char_array[ output.length() ];
 		strcpy(char_array, output.c_str());
