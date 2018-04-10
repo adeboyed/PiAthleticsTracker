@@ -236,4 +236,9 @@ int main(int argc, char** argv){
 	//Start thread for monitoring client
 	thread t4 ( clientCheck );
 
+	t1.join();
+	t2.join();
+	t3.join();
+	t4.join();
+
 }
