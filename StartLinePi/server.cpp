@@ -65,7 +65,7 @@ void startRace(){
 	// Play track for ready
 
 	//Wait 5 seconds
-    time.sleep ( 5 )
+    sleep ( 5 )
 
 	//Play track for set
 
@@ -92,19 +92,22 @@ void handle_web_clients(){
 	listen(serverSock,1);
 
 	while (true){
-		char *output = 
+		string output = 
 			"{" +
 				"\"clientStatus\": " + clientAlive() + ", " +
 				"\"lightGateCaptured\": " + lightGateCaptured + ", " +
 				"\"raceInProgress\" : " + ( raceStartingSoon || inRace ) + ", " +
 				"\"lastRameTime\" : " + lastRaceTime +
 			"}";
+
+		char char_array[ output.length() ];
+		strcpy(char_array, output.c_str());
 			
 		sockaddr_in clientAddr;
         socklen_t sin_size = sizeof(struct sockaddr_in);
         int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
 		if ( clientSock > 0 ){
-			write( clientSock, output, strlen(output) );
+			write( clientSock, char_array, strlen(char_array) );
 			close( clientSock );
 		}
 	}
@@ -171,6 +174,7 @@ void clientCheck(){
 			radio.stopListening();
 
 			radio.write( &REQ_WAIT, sizeof( unsigned long ) );
+			unsigned long started_waiting_at = millis();
 
 			bool timeout = false;
             while ( ! radio.available() && ! timeout ) {

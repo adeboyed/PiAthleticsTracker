@@ -139,6 +139,7 @@ void cycle(){
 			}
 
 			bool ok = radio.write( &measured_time, sizeof( unsigned long ) );
+			unsigned long started_waiting_at = millis();
 			if ( !ok ){
 				printf("Failed! Radio Error \n");
 			}
@@ -154,7 +155,7 @@ void cycle(){
 			}
 
 			if ( !timeout ){
-				int got_req;
+				unsigned long got_time;
 				radio.read( &got_time, sizeof( unsigned long ) );
 
 				if ( got_req == STATE_WAITING ){
