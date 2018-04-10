@@ -33,7 +33,7 @@ bool radioListening = false;
 
 void cycle(){
 	if ( current_state == STATE_TIME_SYNCING ){
-		printf("STATE: TIME SYNCING");
+		printf("STATE: TIME SYNCING \n");
 		
 		if ( radioListening ){
 			radio.stopListening(); radioListening = false;

@@ -92,25 +92,28 @@ void handle_web_clients(){
 	listen(serverSock,1);
 
 	while (true){
-		string output = "{ \"clientStatus\": ";
-		output.append( clientAlive() ? "true" : "false" );
-		output.append( ", \"lightGateCaptured\": ");
-		output.append( lightGateCaptured ? "true" : "false" );
-		output.append( ", \"raceInProgress\" : ");
-		output.append( ( raceStartingSoon || inRace ) ? "true" : "false" );
-		output.append( ", \"lastRameTime\" : " );
-		output.append( to_string( lastRaceTime ) );
-		output.append( "}" );
-
-		char char_array[ output.length() ];
-		strcpy(char_array, output.c_str());
-			
 		sockaddr_in clientAddr;
         socklen_t sin_size = sizeof(struct sockaddr_in);
         int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
 		if ( clientSock > 0 ){
+			printf("Valid web client socket request \n");
+			string output = "{ \"clientStatus\": ";
+			output.append( clientAlive() ? "true" : "false" );
+			output.append( ", \"lightGateCaptured\": ");
+			output.append( lightGateCaptured ? "true" : "false" );
+			output.append( ", \"raceInProgress\" : ");
+			output.append( ( raceStartingSoon || inRace ) ? "true" : "false" );
+			output.append( ", \"lastRameTime\" : " );
+			output.append( to_string( lastRaceTime ) );
+			output.append( "}" );
+
+			char char_array[ output.length() ];
+			strcpy(char_array, output.c_str());
+			
 			write( clientSock, char_array, strlen(char_array) );
 			close( clientSock );
+		}else {
+			printf("Invalid web client socket request \n");
 		}
 	}
 }
@@ -131,6 +134,7 @@ void handle_web_clients_race(){
         socklen_t sin_size = sizeof(struct sockaddr_in);
         int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
 		if ( clientSock > 0 ){
+			printf("Web Client requested start of race \n");
 			close( clientSock );
 			startRace();
 		}
@@ -139,14 +143,18 @@ void handle_web_clients_race(){
 
 void radioListen(){
 	while (true){
+		printf("Radio Listen Thread: started \n");
 		radioLock.lock();
 		if ( radio.available() ){
-			int payload;
+			printf("Radio Listen Thread: radio available \n");
+			unsigned long payload;
 			
 			while(radio.available()){
 				radio.read( &payload, sizeof( unsigned long ) );
             }
 			radio.stopListening(); radioListening = false;
+
+			printf("Radio Listen Thread: Recieved: %lu", payload );
 
 			if ( payload == REQ_TIME ){
 				unsigned long got_time = millis();
@@ -171,8 +179,10 @@ void radioListen(){
 
 void clientCheck(){
 	while (true){
+		printf("Client Check Thread: running \n" );
 		if ( clientAlive() && ( lastSyncInteration - millis() ) < 2000 ){
 			while (true) radioLock.lock();
+			printf("Client Check Thread: sending heartbeat \n ");
 			radio.stopListening();
 
 			radio.write( &REQ_WAIT, sizeof( unsigned long ) );
