@@ -46,7 +46,7 @@ int startRaceTime = 0;
 int lastRaceTime = 0;
 
 bool clientAlive(){
-	return ( lastClientInteraction - millis() ) < TIMEOUT_REQ_WAITING;
+	return ( millis() - lastClientInteraction ) < TIMEOUT_REQ_WAITING;
 } 
 
 void startRace(){
@@ -179,8 +179,8 @@ void radioListen(){
 void clientCheck(){
 	while (true){
 		bool alive_client = clientAlive();
-		printf( active_client ? "Client Check Thread: clientAlive" : "Client Check Thread: clientDead" ); 
-		if ( clientAlive() && ( lastSyncInteraction - millis() ) > 2000 ){
+		printf( alive_client ? "Client Check Thread: clientAlive \n" : "Client Check Thread: clientDead \n" ); 
+		if ( alive_client && ( lastSyncInteraction - millis() ) > 2000 ){
 			radioLock.lock();
 			printf("Client Check Thread: sending heartbeat \n ");
 			radio.stopListening();
@@ -205,7 +205,7 @@ void clientCheck(){
 			radio.startListening();
 			radioLock.unlock();
 		}
-		delay( 2500 );	
+		delay( 2000 );	
 	}
 }
 
