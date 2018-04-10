@@ -93,13 +93,13 @@ void handle_web_clients(){
 
 	while (true){
 		string output = "{ \"clientStatus\": ";
-		output.append( clientAlive() );
+		output.append( clientAlive() ? "true" : "false" );
 		output.append( ", \"lightGateCaptured\": ");
-		output.append( lightGateCaptured );
+		output.append( lightGateCaptured ? "true" : "false" );
 		output.append( ", \"raceInProgress\" : ");
-		output.append( ( raceStartingSoon || inRace ) );
+		output.append( ( raceStartingSoon || inRace ) ? "true" : "false" );
 		output.append( ", \"lastRameTime\" : " );
-		output.append( lastRaceTime );
+		output.append( to_string( lastRaceTime ) );
 		output.append( "}" );
 
 		char char_array[ output.length() ];
