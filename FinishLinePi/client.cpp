@@ -22,7 +22,7 @@ const int STATE_WAITING = 20;
 const int STATE_IN_RACE = 30;
 
 // Radio pipe addresses for the 2 nodes to communicate.
-const uint8_t pipes[][6] = {"1Node","2Node"};
+const uint64_t pipes[2] = { 0xF0F0F0F0D2LL, 0xF0F0F0F0E1LL };
 
 unsigned long time_offset = 0;
 unsigned long offset_rtt = ULONG_MAX; 
