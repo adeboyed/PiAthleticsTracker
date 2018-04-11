@@ -13,11 +13,16 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <nlohmann/json.hpp>
 
 #define IN_SERVER_PORT htons(1010)
 #define OUT_SERVER_PORT htons(1011)
 
+//Set race timeout to 60 seconds
+#define RACE_TIMEOUT 60000
+
 using namespace std;
+using json = nlohmann::json;
 
 const int TIMEOUT_REQ_TIME = 250;
 const int TIMEOUT_REQ_WAITING = 10000;
@@ -97,19 +102,24 @@ void handle_web_clients(){
 		int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
 		if ( clientSock > 0 ){
 			printf("Valid web client socket request \n");
-			string output = "{ \"clientStatus\": ";
-			output.append( clientAlive() ? "true" : "false" );
-			output.append( ", \"lightGateCaptured\": ");
-			output.append( lightGateCaptured ? "true" : "false" );
-			output.append( ", \"raceInProgress\" : ");
-			output.append( ( raceStartingSoon || inRace ) ? "true" : "false" );
-			output.append( ", \"lastRameTime\" : " );
-			output.append( to_string( lastRaceTime ) );
-			output.append( "}" );
+			json j;
+			double time = roundf( lastRaceTime * 10 ) / 100; 	
 
+			j["clientStatus"] = clientAlive();
+			j["lightGateCaptured"] = lightGateCaptured;
+			j["raceInProgress"] = ( raceStartingSoon || inRace );
+			
+			if ( time < 0 ){
+				j["lastRaceTime"] = "Timeout";
+			} else {
+				j["lastRaceTime"] = time;		
+			}
+
+			string output = j.dump();
 			char char_array[ output.length() ];
 			strcpy(char_array, output.c_str());
 
+			printf("Sending %s to web client \n");
 			write( clientSock, char_array, strlen(char_array) );
 			close( clientSock );
 		}else {
@@ -176,7 +186,7 @@ void radioListen(){
 	}
 }
 
-void clientCheck(){
+void client_check(){
 	while (true){
 		bool alive_client = clientAlive();
 		printf( alive_client ? "Client Check Thread: clientAlive \n" : "Client Check Thread: clientDead \n" ); 
@@ -205,6 +215,16 @@ void clientCheck(){
 			}
 
 			radioLock.unlock();
+		}
+
+		//Poor design but we'll handle timeouts here
+		if ( inRace ){
+			long race_time = millis() - startRaceTime;
+			if ( race_time > RACE_TIMEOUT ){
+				//Client probably missed it, we're gonna timeout;
+				lastRaceTime = -1;
+				inRace = false;	 
+			} 
 		}
 		delay( 2000 );	
 	}
