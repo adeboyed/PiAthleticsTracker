@@ -89,6 +89,15 @@ bool send_race_status(){
 void start_race(){
 	if ( raceStartingSoon || inRace || !lightGateCaptured ){
 		printf("Start Race Thread: race rejected \n ");
+		
+		printf("Start Race Thread: raceStartingSoon: ");
+		printf( raceStartingSoon ? "true \n" : "false \n" );
+
+		printf("Start Race Thread: inRace: ");
+		printf( inRace ? "true \n" : "false \n" );
+
+		printf("Start Race Thread: lightGateCaptured: ");
+		printf( lightGateCaptured ? "true \n" : "false \n" );
 		return;
 	}
 	printf("Start Race Thread: starting sequence... \n ");
@@ -99,23 +108,26 @@ void start_race(){
 	sleep(10);
 
 	//Get client ready
-
-	// Play track for ready
-
-	//Wait 5 seconds
-	sleep ( 5 );
-
-	//Play track for set
-
-	//Wait between 1 and 3 seconds
-	delay( (rand() % 2000) + 1000 );
-
-	//Play track for go
 	if ( send_race_status() ){
-		raceStartingSoon = false;
+		// Play track for ready
+		system("omxplayer -o local sounds/ready.mp3");		
+
+		//Wait 5 seconds
+		sleep ( 5 );
+
+		//Play track for set
+		system("omxplayer -o local sounds/set.mp3");
+
+		//Wait between 1 and 3 seconds
+		delay( (rand() % 2000) + 1000 );
+
+		//Play track for go
+		system("omxplayer -o local sounds/go.mp3");
 		inRace = true;
 		startRaceTime = millis();
 	}
+	raceStartingSoon = false;
+		
 }
 
 void handle_web_clients(){
