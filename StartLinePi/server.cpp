@@ -18,19 +18,17 @@
 #define IN_SERVER_PORT htons(1010)
 #define OUT_SERVER_PORT htons(1011)
 
-//Set race timeout to 60 seconds
-#define RACE_TIMEOUT 60000
+#define REQ_ACK 1
+#define REQ_TIME 100
+#define REQ_WAIT 200
+#define REQ_RACE 300
+
+#define TIMEOUT_REQ_TIME 250
+#define TIMEOUT_REQ_WAITING 10000
+#define TIMEOUT_RACE 60000
 
 using namespace std;
 using json = nlohmann::json;
-
-const int TIMEOUT_REQ_TIME = 250;
-const int TIMEOUT_REQ_WAITING = 10000;
-
-const unsigned long REQ_ACK = 1;
-const unsigned long REQ_TIME = 100;
-const unsigned long REQ_WAIT = 200;
-const unsigned long REQ_RACE = 300;
 
 RF24 radio(22,0);
 
@@ -50,11 +48,11 @@ bool inRace = false;
 int startRaceTime = 0;
 int lastRaceTime = 0;
 
-bool clientAlive(){
+bool client_alive(){
 	return ( millis() - lastClientInteraction ) < TIMEOUT_REQ_WAITING;
 } 
 
-void startRace(){
+void start_race(){
 	if ( raceStartingSoon || inRace ){
 		return;
 	}
@@ -99,20 +97,20 @@ void handle_web_clients(){
 	while (true){
 		sockaddr_in clientAddr;
 		socklen_t sin_size = sizeof(struct sockaddr_in);
-		int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
-		if ( clientSock > 0 ){
+		int client_sock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
+		if ( client_sock > 0 ){
 			printf("Valid web client socket request \n");
 			json j;
 			double time = roundf( lastRaceTime * 10 ) / 100; 	
 
-			j["clientStatus"] = clientAlive();
-			j["lightGateCaptured"] = lightGateCaptured;
-			j["raceInProgress"] = ( raceStartingSoon || inRace );
+			j["client_status"] = client_alive();
+			j["light_gate_captured"] = lightGateCaptured;
+			j["race_in_progress"] = ( raceStartingSoon || inRace );
 			
 			if ( time < 0 ){
-				j["lastRaceTime"] = "Timeout";
+				j["last_race_time"] = "timeout";
 			} else {
-				j["lastRaceTime"] = time;		
+				j["last_race_time"] = time;		
 			}
 
 			string output = j.dump();
@@ -120,8 +118,8 @@ void handle_web_clients(){
 			strcpy(char_array, output.c_str());
 
 			printf("Sending %s to web client \n");
-			write( clientSock, char_array, strlen(char_array) );
-			close( clientSock );
+			write( client_sock, char_array, strlen(char_array) );
+			close( client_sock );
 		}else {
 			printf("Invalid web client socket request \n");
 		}
@@ -142,16 +140,16 @@ void handle_web_clients_race(){
 	while (true){
 		sockaddr_in clientAddr;
 		socklen_t sin_size = sizeof(struct sockaddr_in);
-		int clientSock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
-		if ( clientSock > 0 ){
+		int client_sock = accept(serverSock,(struct sockaddr*)&clientAddr, &sin_size);	
+		if ( client_sock > 0 ){
 			printf("Web Client requested start of race \n");
-			close( clientSock );
-			startRace();
+			close( client_sock );
+			start_race();
 		}
 	}
 }
 
-void radioListen(){
+void radio_listen(){
 	while (true){
 		radioLock.lock();
 		if ( radio.available() ){
@@ -188,7 +186,7 @@ void radioListen(){
 
 void client_check(){
 	while (true){
-		bool alive_client = clientAlive();
+		bool alive_client = client_alive();
 		printf( alive_client ? "Client Check Thread: clientAlive \n" : "Client Check Thread: clientDead \n" ); 
 		if ( alive_client && ( lastSyncInteraction - millis() ) > 2000 ){
 			radioLock.lock();
@@ -220,7 +218,7 @@ void client_check(){
 		//Poor design but we'll handle timeouts here
 		if ( inRace ){
 			long race_time = millis() - startRaceTime;
-			if ( race_time > RACE_TIMEOUT ){
+			if ( race_time > TIMEOUT_RACE ){
 				//Client probably missed it, we're gonna timeout;
 				lastRaceTime = -1;
 				inRace = false;	 
@@ -255,10 +253,10 @@ int main(int argc, char** argv){
 	thread t2( handle_web_clients_race );
 
 	//Start thread to listen on radio
-	thread t3 ( radioListen );	
+	thread t3 ( radio_listen );	
 
 	//Start thread for monitoring client
-	thread t4 ( clientCheck );
+	thread t4 ( client_check );
 
 	t1.join();
 	t2.join();
