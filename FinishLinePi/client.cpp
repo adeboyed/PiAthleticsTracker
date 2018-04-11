@@ -111,15 +111,17 @@ void cycle(){
 			radio.read( &req_code, sizeof( unsigned long ) );
 			
 			printf("Recieved %lu from the server \n", req_code );
-
-			//Send back an ACK
-			radio.stopListening();
-            radio.write( &REQ_ACK, sizeof( unsigned long ) );	
-			radio.startListening();			
-
 			if ( req_code == REQ_RACE ){
-				current_state = STATE_IN_RACE;	
+				current_state = STATE_IN_RACE;
+			
+				radio.stopListening();
+				radio.write( &REQ_ACK, sizeof( unsigned long ) );	
+				radio.startListening();	
 			}else if ( req_code == REQ_WAIT ){
+				radio.stopListening();
+				radio.write( &REQ_ACK, sizeof( unsigned long ) );	
+				radio.startListening();
+			
 				sleep (1);
 			}			
 		}	
