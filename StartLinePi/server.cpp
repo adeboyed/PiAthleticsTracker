@@ -228,12 +228,13 @@ void client_check(){
 		printf( alive_client ? "Client Check Thread: clientAlive \n" : "Client Check Thread: clientDead \n" ); 
 		if ( alive_client && ( lastSyncInteraction - millis() ) > 2000 ){
 			radioLock.lock();
-			printf("Client Check Thread: sending heartbeat \n");
-
 			radio.stopListening();
-			if ( lastWebClientInteraction < TIMEOUT_REQ_WAITING ){ 
+			
+			if ( ( millis() - lastWebClientInteraction ) < TIMEOUT_REQ_WAITING ){ 
+				printf("Client Check Thread: sending lightgate heartbeat \n");
 				radio.write( &REQ_LIGHT_GATE, sizeof( unsigned long ) );
 			}else{ 
+				printf("Client Check Thread: sending heartbeat \n");
 				radio.write( &REQ_WAIT, sizeof( unsigned long ) );
 			}	
 			radio.startListening();			
@@ -258,6 +259,8 @@ void client_check(){
 					lastClientInteraction = millis();
 					lightGateCaptured = true;	
 				}
+			}else {
+				printf("Client Check Thread: timeout \n");
 			}
 
 			radioLock.unlock();
@@ -272,7 +275,7 @@ void client_check(){
 				inRace = false;	 
 			} 
 		}
-		if ( lastWebClientInteraction < TIMEOUT_REQ_WAITING ){
+		if ( ( millis() - lastWebClientInteraction) < TIMEOUT_REQ_WAITING ){
 			delay( 750 );
 		}else {
 			delay( 2000 );
