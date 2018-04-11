@@ -18,11 +18,6 @@
 #define IN_SERVER_PORT htons(1010)
 #define OUT_SERVER_PORT htons(1011)
 
-#define REQ_ACK 1
-#define REQ_TIME 100
-#define REQ_WAIT 200
-#define REQ_RACE 300
-
 #define TIMEOUT_REQ_TIME 250
 #define TIMEOUT_REQ_WAITING 10000
 #define TIMEOUT_RACE 60000
@@ -34,6 +29,10 @@ RF24 radio(22,0);
 
 // Radio pipe addresses for the 2 nodes to communicate.
 const uint64_t pipes[2] = { 0xF0F0F0F0D2LL, 0xF0F0F0F0E1LL };
+const unsigned long REQ_ACK = 1;
+const unsigned long REQ_TIME = 100;
+const unsigned long REQ_WAIT = 200;
+const unsigned long REQ_RACE = 300;
 
 mutex radioLock;
 
@@ -52,16 +51,47 @@ bool client_alive(){
 	return ( millis() - lastClientInteraction ) < TIMEOUT_REQ_WAITING;
 } 
 
+bool send_race_status(){
+	radioLock.lock();
+	printf("Start Race Thread: sending message \n ");
+
+	radio.stopListening();
+	radio.write( &REQ_RACE, sizeof( unsigned long ) );
+	radio.startListening();			
+
+	unsigned long started_waiting_at = millis();
+	bool timeout = false;
+	while ( ! radio.available() && ! timeout ) {
+		if (millis() - started_waiting_at > TIMEOUT_REQ_TIME )
+			timeout = true;
+	}
+
+	if ( !timeout ){
+		unsigned long response;
+		radio.read( &response, sizeof( unsigned long ) );
+		printf("Start Race Thread: recieved %lu from client \n", response);
+		if ( response == REQ_ACK ){
+			lastClientInteraction = millis();
+			radioLock.unlock();
+			return true;
+		}
+	}
+
+	radioLock.unlock();
+	return false;
+}
+
 void start_race(){
-	if ( raceStartingSoon || inRace ){
+	if ( raceStartingSoon || inRace || !lightGateCaptured ){
+		printf("Start Race Thread: race rejected \n ");
 		return;
 	}
+	printf("Start Race Thread: starting sequence... \n ");
 
 	raceStartingSoon = true;
 
 	// Wait 10 seconds more starting race
 	sleep(10);
-
 
 	//Get client ready
 
@@ -76,10 +106,11 @@ void start_race(){
 	delay( (rand() % 2000) + 1000 );
 
 	//Play track for go
-
-	raceStartingSoon = false;
-	inRace = true;
-	startRaceTime = millis();
+	if ( send_race_status() ){
+		raceStartingSoon = false;
+		inRace = true;
+		startRaceTime = millis();
+	}
 }
 
 void handle_web_clients(){
@@ -106,7 +137,7 @@ void handle_web_clients(){
 			j["client_status"] = client_alive();
 			j["light_gate_captured"] = lightGateCaptured;
 			j["race_in_progress"] = ( raceStartingSoon || inRace );
-			
+
 			if ( time < 0 ){
 				j["last_race_time"] = "timeout";
 			} else {
@@ -117,7 +148,7 @@ void handle_web_clients(){
 			char char_array[ output.length() ];
 			strcpy(char_array, output.c_str());
 
-			printf("Sending %s to web client \n");
+			printf("Sending %s to web client \n", char_array );
 			write( client_sock, char_array, strlen(char_array) );
 			close( client_sock );
 		}else {
@@ -190,8 +221,8 @@ void client_check(){
 		printf( alive_client ? "Client Check Thread: clientAlive \n" : "Client Check Thread: clientDead \n" ); 
 		if ( alive_client && ( lastSyncInteraction - millis() ) > 2000 ){
 			radioLock.lock();
-			printf("Client Check Thread: sending heartbeat \n ");
-			
+			printf("Client Check Thread: sending heartbeat \n");
+
 			radio.stopListening();
 			radio.write( &REQ_WAIT, sizeof( unsigned long ) );
 			radio.startListening();			
@@ -206,7 +237,7 @@ void client_check(){
 			if ( !timeout ){
 				unsigned long response;
 				radio.read( &response, sizeof( unsigned long ) );
-				printf("Recieved %lu from client \n");
+				printf("Client Check Thread: recieved %lu from client \n", response);
 				if ( response == REQ_ACK ){
 					lastClientInteraction = millis();
 				}
