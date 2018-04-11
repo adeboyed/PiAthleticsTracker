@@ -19,10 +19,13 @@ START RACE
 
 ## Tech Used
 - 2x Raspberry Pis (1 v3, 1 v2)
-- 2x NRF24L01+ for communication between the Pis
+- 2x NRF24L01 for communication between the Pis
 - 1x TCS34725 RGB Sensor for Light Gate
 - 2x Camera Tripod for holding the parts of the light gate
 - 1x Laser Pointer
+
+# Resources
+http://thedigitalryan.com/index.php/2015/05/24/raspberry-pi-2-and-arduino-with-nrf24l01-radios/
 
 ## Raspberry Pi Roles
 ### Base Pi
