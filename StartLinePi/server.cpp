@@ -22,6 +22,9 @@
 #define TIMEOUT_REQ_WAITING 10000
 #define TIMEOUT_RACE 60000
 
+#define LIGHTGATE_OFF 2
+#define LIGHTGATE_ON 3
+
 using namespace std;
 using json = nlohmann::json;
 
@@ -230,7 +233,7 @@ void client_check(){
 			radio.stopListening();
 			if ( lastWebClientInteraction < TIMEOUT_REQ_WAITING ){ 
 				radio.write( &REQ_LIGHT_GATE, sizeof( unsigned long ) );
-			}else 
+			}else{ 
 				radio.write( &REQ_WAIT, sizeof( unsigned long ) );
 			}	
 			radio.startListening();			
