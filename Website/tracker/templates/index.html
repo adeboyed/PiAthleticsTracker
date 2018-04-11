@@ -1,31 +1,28 @@
+{% load static %}
 <htm class="no-js" lang="">
     <head>
         <meta charset="utf-8">
         <meta http-equiv="x-ua-compatible" content="ie=edge">
-        <title></title>
+        <title>Pi Atheltics Tracker</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-
-        <link rel="manifest" href="site.webmanifest">
-        <link rel="apple-touch-icon" href="icon.png">
-        <!-- Place favicon.ico in the root directory -->
-
-        <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/main.css">
-        <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+		<link rel="stylesheet" type="text/css" href="{% static 'bootstrap.min.css' %}">
+        <script src="{% static 'jquery.min.js' %}"></script>
+		<script src="{% static 'pooper.min.js' %}"></script>
+		<script src="{% static 'bootstrap.min.js' %}"></script>
     </head>
     <body>
-        <!--[if lte IE 9]>
-            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
-        <![endif]-->
-        
 
         {% if started_race %}
-        <!-- Add your site or application content here -->
-        <p>Hello world! This is athletics tracker!</p>
-        <p>You have started a race!</p>
-        <p id="race-time-desc">Time will display when race is over.</p>
-
+        <div class="container">
+			<div class="row">
+				<div class="col-sm-10 col-sm-offset-1">
+					<h1>Pi Athletics Tracker</h1>
+        			<h4>You have started a race!</h4>
+        			<h4 id="race-time-desc">Time will display when race is over.</h4>
+				</div>
+			</div>
+		</div>
         <script>
         $(document).ready(function() {
            $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
@@ -47,13 +44,21 @@
         </script>
 
         {% else %}
-
-        <p>This is the start of the race</p>
-        <p id="pis_status" style="color: red">Can find other PI</p>
-        <p id="gate_status" style="color: red">Light gate set up</p>
-
-        <button onclick="location.href = '/start_race/';" disabled="True" id="start-button">Start Race!</button>
-
+		
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-10 col-sm-offset-1">
+					<h1>Pi Athletics Tracker</h1>
+					
+					<h4 id="pis_status" style="color: red">Can find other PI</h4>
+        			<h4 id="gate_status" style="color: red">Light gate set up</h4>
+					
+					<button type="button" class="btn btn-primary" onclick="location.href = '/start_race/';" disabled id="start-button">Start Race!</button>
+					
+				</div>
+			</div>
+		</div>
+		
         <script>
         $(document).ready(function() {
            $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
@@ -80,12 +85,7 @@
 
         <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.2.1.min.js"><\/script>')</script>
 
-        <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
-        <script>
-            window.ga=function(){ga.q.push(arguments)};ga.q=[];ga.l=+new Date;
-            ga('create','UA-XXXXX-Y','auto');ga('send','pageview')
-        </script>
-        <script src="https://www.google-analytics.com/analytics.js" async defer></script>
+		
     </body>
 </html>
 
