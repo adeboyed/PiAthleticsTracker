@@ -13,7 +13,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 
 #define IN_SERVER_PORT htons(1010)
 #define OUT_SERVER_PORT htons(1011)
