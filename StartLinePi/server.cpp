@@ -32,6 +32,7 @@ const uint64_t pipes[2] = { 0xF0F0F0F0D2LL, 0xF0F0F0F0E1LL };
 const unsigned long REQ_ACK = 1;
 const unsigned long REQ_TIME = 100;
 const unsigned long REQ_WAIT = 200;
+const unsigned long REQ_LIGHT_GATE = 250;
 const unsigned long REQ_RACE = 300;
 
 mutex radioLock;
@@ -40,6 +41,7 @@ bool radioListening = false;
 
 unsigned long lastClientInteraction = ULONG_MAX;
 unsigned long lastSyncInteraction = ULONG_MAX;
+unsigned long lastWebClientInteraction = ULONG_MAX;
 bool lightGateCaptured = false;
 
 bool raceStartingSoon = false;
@@ -151,6 +153,7 @@ void handle_web_clients(){
 			printf("Sending %s to web client \n", char_array );
 			write( client_sock, char_array, strlen(char_array) );
 			close( client_sock );
+			lastWebClientInteraction = millis();
 		}else {
 			printf("Invalid web client socket request \n");
 		}
@@ -175,6 +178,7 @@ void handle_web_clients_race(){
 		if ( client_sock > 0 ){
 			printf("Web Client requested start of race \n");
 			close( client_sock );
+			lastWebClientInteraction = millis();
 			start_race();
 		}
 	}
@@ -224,7 +228,11 @@ void client_check(){
 			printf("Client Check Thread: sending heartbeat \n");
 
 			radio.stopListening();
-			radio.write( &REQ_WAIT, sizeof( unsigned long ) );
+			if ( lastWebClientInteraction < TIMEOUT_REQ_WAITING ){ 
+				radio.write( &REQ_LIGHT_GATE, sizeof( unsigned long ) );
+			}else 
+				radio.write( &REQ_WAIT, sizeof( unsigned long ) );
+			}	
 			radio.startListening();			
 
 			unsigned long started_waiting_at = millis();
@@ -240,6 +248,12 @@ void client_check(){
 				printf("Client Check Thread: recieved %lu from client \n", response);
 				if ( response == REQ_ACK ){
 					lastClientInteraction = millis();
+				}else if ( response == LIGHTGATE_OFF ){
+					lastClientInteraction = millis();
+					lightGateCaptured = false;	
+				}else if ( response == LIGHTGATE_ON ){
+					lastClientInteraction = millis();
+					lightGateCaptured = true;	
 				}
 			}
 
@@ -255,7 +269,11 @@ void client_check(){
 				inRace = false;	 
 			} 
 		}
-		delay( 2000 );	
+		if ( lastWebClientInteraction < TIMEOUT_REQ_WAITING ){
+			delay( 750 );
+		}else {
+			delay( 2000 );
+		}	
 	}
 }
 

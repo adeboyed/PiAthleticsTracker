@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <RF24/RF24.h>
 
+#define LIGHTGATE_OFF 2
+#define LIGHTGATE_ON 3
+
 using namespace std;
 RF24 radio(22,0);
 
@@ -15,7 +18,8 @@ const int TIMEOUT_REQ_WAITING = 10000;
 const unsigned long REQ_ACK = 1;
 const unsigned long REQ_TIME = 100;
 const unsigned long REQ_WAIT = 200;
-const unsigned long  REQ_RACE = 300;
+const unsigned long REQ_LIGHT_GATE = 250;
+const unsigned long REQ_RACE = 300;
 
 const int STATE_TIME_SYNCING = 10;
 const int STATE_WAITING = 20;
@@ -30,6 +34,8 @@ int offset_tries = 5;
 
 int current_state = STATE_TIME_SYNCING;
 bool radioListening = false;
+
+unsigned long lightgate_active = 2;
 
 void cycle(){
 	if ( current_state == STATE_TIME_SYNCING ){
@@ -122,7 +128,13 @@ void cycle(){
 				radio.write( &REQ_ACK, sizeof( unsigned long ) );	
 				radio.startListening();
 			
-				sleep (1);
+				sleep (0.5);
+			}else if ( req_code == REQ_LIGHT_GATE ){
+				radio.stopListening();
+				radio.write( &lightgate_active, sizeof ( unsigned long ) );
+				radio.startListening();
+				
+				sleep( 0.5 );
 			}			
 		}	
 	} else if ( current_state == STATE_IN_RACE ){
