@@ -1,20 +1,15 @@
 import socket
 import sys
-import pickle
-
-# Create a TCP/IP socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_address = ('localhost', 8081)
+import json
 
 def GetStatus():
-	connection = sock.connect(server_address)
-	
-	data = false
-	while not (data):
-		data = sock.recv(1024)
-		connection.close()
-
-	return pickle.load( data )
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.connect( ('localhost', 1010) )
+	data = sock.recv(1024)
+	sock.close()
+	return json.load( data )
 
 def StartRace():
-    pass
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	connection = sock.connect( ('localhost', 1011) )
+	connection.close()
