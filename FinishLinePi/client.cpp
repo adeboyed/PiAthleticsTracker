@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <RF24/RF24.h>
 #include <thread>
+#include "lightgate.h"
 
 #define LIGHTGATE_OFF 2
 #define	LIGHTGATE_ON 3
@@ -13,39 +14,54 @@
 #define TIMEOUT_REQ_TIME 250
 #define TIMEOUT_REQ_WAITING 10000
 
+#define STATE_TIME_SYNCING 10
+#define STATE_WAITING 20
+#define STATE_IN_RACE 30
+#define STATE_LIGHT_GATE 40
+
+#define LIGHT_GATE_DELAY_TIME_SYNC 500
+#define LIGHT_GATE_WAITING 400
+#define LIGHT_GATE_CHECK 250
+#define LIGHT_GATE_IN_RACE 30
+
 using namespace std;
 RF24 radio(22,0);
+LightGate gate;
 
+mutex radioLock;
+bool radioListening = false;
+
+// Radio pipe addresses for the 2 nodes to communicate.
+const uint64_t pipes[2] = { 0xF0F0F0F0D2LL, 0xF0F0F0F0E1LL };
 const unsigned long REQ_ACK = 1;
 const unsigned long REQ_TIME = 100;
 const unsigned long REQ_WAIT = 200;
 const unsigned long REQ_LIGHT_GATE = 250;
 const unsigned long REQ_RACE = 300;
 
-const int STATE_TIME_SYNCING = 10;
-const int STATE_WAITING = 20;
-const int STATE_IN_RACE = 30;
-
-// Radio pipe addresses for the 2 nodes to communicate.
-const uint64_t pipes[2] = { 0xF0F0F0F0D2LL, 0xF0F0F0F0E1LL };
-
 unsigned long time_offset = 0;
 unsigned long offset_rtt = ULONG_MAX; 
 int offset_tries = 5;
 
+unsigned long lightgate_active = LIGHTGATE_ON;
 int current_state = STATE_TIME_SYNCING;
 
-mutex radioLock;
-bool radioListening = false;
-
-unsigned long lightgate_active = LIGHTGATE_ON;
-
-int delay_rate = 2000;
+int lightgate_delay_rate = 2000;
 
 void check_lightgate(){
 	while (true){
 
-		delay( delay_rate);
+		lightgate_active = ( gate.read() ) ? LIGHTGATE_ON ? LIGHTGATE_OFF;	
+		
+		if ( current_state == STATE_TIME_SYNCING ){
+			delay( LIGHT_GATE_DELAY_TIME_SYNC );
+		}else if ( current_state == STATE_WAITING ){ 
+			delay( LIGHT_GATE_WAITING );
+		}else if ( current_state == STATE_LIGHT_GATE ){
+			delay( LIGHT_GATE_CHECK );
+		}else if ( current_state == STATE_IN_RACE ){
+			delay ( LIGHT_GATE_IN_RACE );
+		}
 	}
 }
 
@@ -194,6 +210,8 @@ void cycle(){
 					radio.startListening();
 					radioLock.unlock();	
 				}else if ( req_code == REQ_WAIT ){
+					current_state = STATE_WAITING;
+					
 					radio.stopListening();
 					radio.write( &REQ_ACK, sizeof( unsigned long ) );	
 					radio.startListening();
@@ -201,6 +219,8 @@ void cycle(){
 					radioLock.unlock();	
 					delay( 500 );
 				}else if ( req_code == REQ_LIGHT_GATE ){
+					current_state = STATE_LIGHT_GATE
+
 					radio.stopListening();
 					radio.write( &lightgate_active, sizeof ( unsigned long ) );
 					radio.startListening();
@@ -224,6 +244,9 @@ int main(int argc, char** argv){
 	//Open pipes
 	radio.openWritingPipe(pipes[0]);
 	radio.openReadingPipe(1,pipes[1]);
+
+	//Setup lightgate
+	gate.setup();	
 
 	printf("PiAthleticsTracker: Finish Line Pi \n");
 
