@@ -10,11 +10,11 @@
 #define LIGHTGATE_OFF 2
 #define	LIGHTGATE_ON 3
 
+#define TIMEOUT_REQ_TIME 250
+#define TIMEOUT_REQ_WAITING 10000
+
 using namespace std;
 RF24 radio(22,0);
-
-const int TIMEOUT_REQ_TIME = 250;
-const int TIMEOUT_REQ_WAITING = 10000;
 
 const unsigned long REQ_ACK = 1;
 const unsigned long REQ_TIME = 100;
