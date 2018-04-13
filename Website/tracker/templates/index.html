@@ -1,91 +1,81 @@
 {% load static %}
-<htm class="no-js" lang="">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="x-ua-compatible" content="ie=edge">
-        <title>Pi Atheltics Tracker</title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<html class="no-js" lang="">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="x-ua-compatible" content="ie=edge">
+		<title>Pi Athletics Tracker</title>
+		<meta name="description" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link rel="stylesheet" type="text/css" href="{% static 'bootstrap.min.css' %}">
-        <script src="{% static 'jquery.min.js' %}"></script>
-		<script src="{% static 'pooper.min.js' %}"></script>
+		<script src="{% static 'jquery.min.js' %}"></script>
+		<script src="{% static 'popper.min.js' %}"></script>
 		<script src="{% static 'bootstrap.min.js' %}"></script>
-    </head>
-    <body>
-
-        {% if started_race %}
-        <div class="container">
-			<div class="row">
-				<div class="col-sm-10 col-sm-offset-1">
-					<h1>Pi Athletics Tracker</h1>
-        			<h4>You have started a race!</h4>
-        			<h4 id="race-time-desc">Time will display when race is over.</h4>
-				</div>
-			</div>
-		</div>
-        <script>
-        $(document).ready(function() {
-           $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
-            var my_refresh = setInterval(function() {
-                $.ajax({
-                    url: '/get_time/',
-                    dataType: 'text',
-                    success: function (data) {
-                      var json = $.parseJSON(data);
-                      if (json.finished) {
-                        $('#race-time-desc').html("Your time is: <span id='race-time'></span>");
-                        $('#race-time').html(json.time);
-                      }
-                    },
-                })
-            }, 1000); // the "1000"
-        });
-
-        </script>
-
-        {% else %}
-		
+	</head>
+	<body>
+		{% if started_race %}
 		<div class="container">
 			<div class="row">
 				<div class="col-sm-10 col-sm-offset-1">
 					<h1>Pi Athletics Tracker</h1>
-					
-					<h4 id="pis_status" style="color: red">Can find other PI</h4>
-        			<h4 id="gate_status" style="color: red">Light gate set up</h4>
-					
-					<button type="button" class="btn btn-primary" onclick="location.href = '/start_race/';" disabled id="start-button">Start Race!</button>
-					
+					<h4>You have started a race!</h4>
+					<h4 id="race-time-desc">Time will display when race is over.</h4>
 				</div>
 			</div>
 		</div>
-		
-        <script>
-        $(document).ready(function() {
-           $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
-            var my_refresh = setInterval(function() {
-                $.ajax({
-                    url: '/get_status/',
-                    dataType: 'text',
-                    success: function (data) {
-                      var json = $.parseJSON(data);
-                      $('#pis_status').css("color", (json.PIs ? "green" : "red"));
-                      $('#gate_status').css("color", (json.gate ? "green" : "red"));
-                      if (json.gate && json.PIs) {
-                        $('#start-button').removeAttr("disabled");
-                      }
-                    },
-                })
-            }, 1000); // the "1000"
-        });
-
-        </script>
-        
-        {% endif %}        
-
-
-        <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.2.1.min.js"><\/script>')</script>
-
-		
-    </body>
+		<script>
+			$(document).ready(function() {
+				$.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
+				var my_refresh = setInterval(function() {
+					$.ajax({
+						url: '/get_time/',
+						dataType: 'text',
+						success: function (data) {
+							console.log( data );
+							var json = $.parseJSON(data);
+							if (json.finished) {
+								if ( isNaN( json.time ) ){
+									$('#race-time-desc').html("<strong>" + json.time + "</strong>");
+								} else {
+									$('#race-time-desc').html("Your time is: <span id='race-time'></span> seconds");
+									$('#race-time').html(json.time);
+								}
+							}
+						}
+					});
+				}, 1000); // the "1000"
+			});
+		</script>
+		{% else %}
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-10 col-sm-offset-1">
+					<h1>Pi Athletics Tracker</h1>
+					<h4 id="pis_status" style="color: red">Can find other PI</h4>
+					<h4 id="gate_status" style="color: red">Light gate set up</h4>
+					<button type="button" class="btn btn-primary" onclick="location.href = '/start_race/';" disabled id="start-button">Start Race!</button>
+				</div>
+			</div>
+		</div>
+		<script>
+			$(document).ready(function() {
+			   $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
+			    var my_refresh = setInterval(function() {
+			        $.ajax({
+			        	url: '/get_status/',
+			            dataType: 'text',
+			            success: function (data) {
+						console.log( data );
+			            	var json = $.parseJSON(data);
+			            	$('#pis_status').css("color", (json.PIs ? "green" : "red"));
+			              	$('#gate_status').css("color", (json.gate ? "green" : "red"));
+			              	if (json.gate && json.PIs) {
+			                	$('#start-button').removeAttr("disabled");
+			              	}
+			            },
+			        })
+			    }, 1000);
+			});
+		</script>
+		{% endif %}
+	</body>
 </html>
-

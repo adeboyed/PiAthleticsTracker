@@ -15,16 +15,16 @@ def index(request):
 import datetime
 def get_time(request):
     status = GetStatus()
-    time = status.get('lastRaceTime', -1)
-    response = {'time': time, 'finished': status.get('raceInProgress', False)}
+    time = status.get('last_race_time', -1)
+    response = {'time': time, 'finished': status.get('race_in_progress', False)}
     return JsonResponse(response)
 
 
 
 def get_status(request):
     status = GetStatus()
-    Pis_connected = status.get('clientStatus', False)
-    Gate_setup = status.get('lightGateCaptured', False)
+    Pis_connected = status.get('client_status', False)
+    Gate_setup = status.get('light_gate_captured', False)
     response = {'PIs': Pis_connected, 'gate': Gate_setup}
     return JsonResponse(response)
 
