@@ -10,6 +10,8 @@ apt-get -y install vim
 apt-get -y install libasound2-dev
 apt-get -y install libncurses5-dev
 apt-get -y install dnsmasq
+apt-get -y install python3-django
+apt-get -y install omxplayer
 git clone https://github.com/tmrh20/RF24.git ${ROOT_PATH}/RF24
 sudo make install -B -C ${ROOT_PATH}/RF24
 git clone https://github.com/tmrh20/RF24Network.git ${ROOT_PATH}/RF24Network
