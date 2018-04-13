@@ -8,7 +8,7 @@
 #include <thread>
 
 #define LIGHTGATE_OFF 2
-#define LIGHTGATE_ON 3
+#define	LIGHTGATE_ON 3
 
 using namespace std;
 RF24 radio(22,0);
@@ -38,12 +38,20 @@ int current_state = STATE_TIME_SYNCING;
 mutex radioLock;
 bool radioListening = false;
 
-unsigned long lightgate_active = 2;
+unsigned long lightgate_active = LIGHTGATE_ON;
 
+int delay_rate = 2000;
+
+void check_lightgate(){
+	while (true){
+
+		delay( delay_rate);
+	}
+}
 
 void simulate_race(){
 	sleep(15);
-	
+
 	radioLock.lock();
 	unsigned long measured_time = millis();
 	//Adjust Time
@@ -90,116 +98,118 @@ void simulate_race(){
 }
 
 void cycle(){
-	if ( current_state == STATE_TIME_SYNCING ){
-		radioLock.lock();
-		printf("STATE: TIME SYNCING \n");
-		if ( radioListening ){
-			radio.stopListening(); radioListening = false;
-		}		
+	while ( true ){
+		if ( current_state == STATE_TIME_SYNCING ){
+			radioLock.lock();
+			printf("STATE: TIME SYNCING \n");
+			if ( radioListening ){
+				radio.stopListening(); radioListening = false;
+			}		
 
-		unsigned long started_waiting_at = millis();
-		bool ok = radio.write( &REQ_TIME, sizeof( unsigned long ) );
-		if ( !ok ){
-			printf("Failed! Radio Error \n");
-		}
-		// Now, continue listening
-		radio.startListening(); radioListening = true;
-
-		// Wait here until we get a response, or timeout (250ms)
-		bool timeout = false;
-		while ( ! radio.available() && ! timeout ) {
-			if (millis() - started_waiting_at > TIMEOUT_REQ_TIME )
-				timeout = true;
-		}
-
-		// Describe the results
-		if ( timeout ){
-			printf("Failed, response timed out.\n");
-
-			//Increment tries in case of server loss
-			if ( time_offset != 0 ){
-				if ( offset_tries < 5 ){
-					offset_tries++;	
-				}else if ( offset_tries == 5 ){
-					//Total reset
-					time_offset = 0;
-					offset_rtt = ULONG_MAX;
-				}	
+			unsigned long started_waiting_at = millis();
+			bool ok = radio.write( &REQ_TIME, sizeof( unsigned long ) );
+			if ( !ok ){
+				printf("Failed! Radio Error \n");
 			}
-
-		} else {
-			// Grab the response, compare, and send to debugging spew
-			unsigned long got_time;
-			radio.read( &got_time, sizeof(unsigned long) );
-			unsigned long rtt = millis() - started_waiting_at;
-			if ( rtt < offset_rtt ){
-				time_offset = ( got_time - rtt / 2 ) - started_waiting_at;
-				printf("Got response %lu, round-trip delay: %lu\n", got_time, rtt );
-				printf("min RTT achieved, calculated offset: %lu \n", time_offset );
-				offset_rtt = rtt;
-			} else {
-				printf("Got response %lu, round-trip delay: %lu\n", got_time, rtt );
-			}
-
-			offset_tries--;	
-			if ( offset_tries <= 0 ){
-				current_state = STATE_WAITING;
-			}
-		}
-		radioLock.unlock();	
-		sleep(1);			
-	} else if ( current_state == STATE_WAITING || current_state == STATE_IN_RACE ) {
-		radioLock.lock();
-		
-		if ( current_state == STATE_WAITING ){
-			printf("STATE: WAITNG \n" );
-		} else if ( current_state == STATE_IN_RACE ){
-			printf("STATE IN RACE \n" );
-		}
-
-		if ( !radioListening ){
+			// Now, continue listening
 			radio.startListening(); radioListening = true;
+
+			// Wait here until we get a response, or timeout (250ms)
+			bool timeout = false;
+			while ( ! radio.available() && ! timeout ) {
+				if (millis() - started_waiting_at > TIMEOUT_REQ_TIME )
+					timeout = true;
+			}
+
+			// Describe the results
+			if ( timeout ){
+				printf("Failed, response timed out.\n");
+
+				//Increment tries in case of server loss
+				if ( time_offset != 0 ){
+					if ( offset_tries < 5 ){
+						offset_tries++;	
+					}else if ( offset_tries == 5 ){
+						//Total reset
+						time_offset = 0;
+						offset_rtt = ULONG_MAX;
+					}	
+				}
+
+			} else {
+				// Grab the response, compare, and send to debugging spew
+				unsigned long got_time;
+				radio.read( &got_time, sizeof(unsigned long) );
+				unsigned long rtt = millis() - started_waiting_at;
+				if ( rtt < offset_rtt ){
+					time_offset = ( got_time - rtt / 2 ) - started_waiting_at;
+					printf("Got response %lu, round-trip delay: %lu\n", got_time, rtt );
+					printf("min RTT achieved, calculated offset: %lu \n", time_offset );
+					offset_rtt = rtt;
+				} else {
+					printf("Got response %lu, round-trip delay: %lu\n", got_time, rtt );
+				}
+
+				offset_tries--;	
+				if ( offset_tries <= 0 ){
+					current_state = STATE_WAITING;
+				}
+			}
+			radioLock.unlock();	
+			sleep(1);			
+		} else if ( current_state == STATE_WAITING || current_state == STATE_IN_RACE ) {
+			radioLock.lock();
+
+			if ( current_state == STATE_WAITING ){
+				printf("STATE: WAITNG \n" );
+			} else if ( current_state == STATE_IN_RACE ){
+				printf("STATE IN RACE \n" );
+			}
+
+			if ( !radioListening ){
+				radio.startListening(); radioListening = true;
+			}
+
+			unsigned long started_waiting_at = millis();
+			bool timeout = false;
+			while ( ! radio.available() && ! timeout ) {
+				if (millis() - started_waiting_at > TIMEOUT_REQ_WAITING )
+					timeout = true;
+			}
+
+			if ( timeout ){
+				printf("Have not recieved anything from server in 10 seconds, will enter time sync \n");
+				offset_tries = 1;
+				current_state = STATE_TIME_SYNCING;
+			}else {
+				unsigned long req_code;
+				radio.read( &req_code, sizeof( unsigned long ) );
+
+				printf("Recieved %lu from the server \n", req_code );
+				if ( req_code == REQ_RACE ){
+					current_state = STATE_IN_RACE;
+
+					radio.stopListening();
+					radio.write( &REQ_ACK, sizeof( unsigned long ) );	
+					radio.startListening();
+					radioLock.unlock();	
+				}else if ( req_code == REQ_WAIT ){
+					radio.stopListening();
+					radio.write( &REQ_ACK, sizeof( unsigned long ) );	
+					radio.startListening();
+
+					radioLock.unlock();	
+					delay( 500 );
+				}else if ( req_code == REQ_LIGHT_GATE ){
+					radio.stopListening();
+					radio.write( &lightgate_active, sizeof ( unsigned long ) );
+					radio.startListening();
+
+					radioLock.unlock();	
+					delay ( 500 );
+				}			
+			}	
 		}
-
-		unsigned long started_waiting_at = millis();
-		bool timeout = false;
-		while ( ! radio.available() && ! timeout ) {
-			if (millis() - started_waiting_at > TIMEOUT_REQ_WAITING )
-				timeout = true;
-		}
-
-		if ( timeout ){
-			printf("Have not recieved anything from server in 10 seconds, will enter time sync \n");
-			offset_tries = 1;
-			current_state = STATE_TIME_SYNCING;
-		}else {
-			unsigned long req_code;
-			radio.read( &req_code, sizeof( unsigned long ) );
-
-			printf("Recieved %lu from the server \n", req_code );
-			if ( req_code == REQ_RACE ){
-				current_state = STATE_IN_RACE;
-
-				radio.stopListening();
-				radio.write( &REQ_ACK, sizeof( unsigned long ) );	
-				radio.startListening();
-				radioLock.unlock();	
-			}else if ( req_code == REQ_WAIT ){
-				radio.stopListening();
-				radio.write( &REQ_ACK, sizeof( unsigned long ) );	
-				radio.startListening();
-
-				radioLock.unlock();	
-				sleep (0.5);
-			}else if ( req_code == REQ_LIGHT_GATE ){
-				radio.stopListening();
-				radio.write( &lightgate_active, sizeof ( unsigned long ) );
-				radio.startListening();
-
-				radioLock.unlock();	
-				sleep( 0.5 );
-			}			
-		}	
 	}
 }
 
@@ -217,8 +227,13 @@ int main(int argc, char** argv){
 
 	printf("PiAthleticsTracker: Finish Line Pi \n");
 
-	while (true){
-		cycle();	
-	}
+	//Thread for checking the lightgate
+	thread t1( check_lightgate );
+
+	//Thread for managing the client
+	thread t2 ( cycle );
+
+	t1.join();
+	t2.join();
 
 }
