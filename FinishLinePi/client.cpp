@@ -5,6 +5,7 @@
 #include <string>
 #include <unistd.h>
 #include <RF24/RF24.h>
+#include <thread>
 
 #define LIGHTGATE_OFF 2
 #define LIGHTGATE_ON 3
@@ -33,14 +34,65 @@ unsigned long offset_rtt = ULONG_MAX;
 int offset_tries = 5;
 
 int current_state = STATE_TIME_SYNCING;
+
+mutex radioLock;
 bool radioListening = false;
 
 unsigned long lightgate_active = 2;
 
+
+void simulate_race(){
+	sleep(15);
+	
+	radioLock.lock();
+	unsigned long measured_time = millis();
+	//Adjust Time
+	measured_time += time_offset;
+
+	int send_tries = 3;
+
+	while ( send_tries > 0 ){
+		if ( radioListening ){
+			radio.stopListening(); radioListening = false;
+		}
+
+		bool ok = radio.write( &measured_time, sizeof( unsigned long ) );
+		unsigned long started_waiting_at = millis();
+		if ( !ok ){
+			printf("Failed! Radio Error \n");
+		}
+
+		// Now, continue listening
+		radio.startListening(); radioListening = true;
+
+		// Wait here until we get a response, or timeout (250ms)
+		bool timeout = false;
+		while ( ! radio.available() && ! timeout ) {
+			if (millis() - started_waiting_at > TIMEOUT_REQ_TIME )
+				timeout = true;
+		}
+
+		if ( !timeout ){
+			unsigned long response;
+			radio.read( &response, sizeof( unsigned long ) );
+
+			if ( response == STATE_WAITING ){
+				send_tries = 0;
+			}else if ( response == STATE_IN_RACE ){
+				send_tries++;
+			} 
+		}else {
+			send_tries--;
+		}
+	}
+	radioLock.unlock();
+
+}
+
 void cycle(){
 	if ( current_state == STATE_TIME_SYNCING ){
+		radioLock.lock();
 		printf("STATE: TIME SYNCING \n");
-		
 		if ( radioListening ){
 			radio.stopListening(); radioListening = false;
 		}		
@@ -88,15 +140,23 @@ void cycle(){
 			} else {
 				printf("Got response %lu, round-trip delay: %lu\n", got_time, rtt );
 			}
-		
+
 			offset_tries--;	
 			if ( offset_tries <= 0 ){
 				current_state = STATE_WAITING;
 			}
-		}	
+		}
+		radioLock.unlock();	
 		sleep(1);			
-	} else if ( current_state == STATE_WAITING ) {
-		printf("STATE: WAITNG \n" );
+	} else if ( current_state == STATE_WAITING || current_state == STATE_IN_RACE ) {
+		radioLock.lock();
+		
+		if ( current_state == STATE_WAITING ){
+			printf("STATE: WAITNG \n" );
+		} else if ( current_state == STATE_IN_RACE ){
+			printf("STATE IN RACE \n" );
+		}
+
 		if ( !radioListening ){
 			radio.startListening(); radioListening = true;
 		}
@@ -115,79 +175,31 @@ void cycle(){
 		}else {
 			unsigned long req_code;
 			radio.read( &req_code, sizeof( unsigned long ) );
-			
+
 			printf("Recieved %lu from the server \n", req_code );
 			if ( req_code == REQ_RACE ){
 				current_state = STATE_IN_RACE;
-			
+
 				radio.stopListening();
 				radio.write( &REQ_ACK, sizeof( unsigned long ) );	
-				radio.startListening();	
+				radio.startListening();
+				radioLock.unlock();	
 			}else if ( req_code == REQ_WAIT ){
 				radio.stopListening();
 				radio.write( &REQ_ACK, sizeof( unsigned long ) );	
 				radio.startListening();
-			
+
+				radioLock.unlock();	
 				sleep (0.5);
 			}else if ( req_code == REQ_LIGHT_GATE ){
 				radio.stopListening();
 				radio.write( &lightgate_active, sizeof ( unsigned long ) );
 				radio.startListening();
-				
+
+				radioLock.unlock();	
 				sleep( 0.5 );
 			}			
 		}	
-	} else if ( current_state == STATE_IN_RACE ){
-		printf("STATE: IN_RACE \n");
-
-		//Simulate race
-		sleep(15);
-
-		unsigned long measured_time = millis();
-		//Adjust Time
-		measured_time += time_offset;
-
-		int send_tries = 3;
-
-		while ( send_tries > 0 ){
-			if ( radioListening ){
-				radio.stopListening(); radioListening = false;
-			}
-
-			bool ok = radio.write( &measured_time, sizeof( unsigned long ) );
-			unsigned long started_waiting_at = millis();
-			if ( !ok ){
-				printf("Failed! Radio Error \n");
-			}
-        
-			// Now, continue listening
-			radio.startListening(); radioListening = true;
-
-			// Wait here until we get a response, or timeout (250ms)
-			bool timeout = false;
-			while ( ! radio.available() && ! timeout ) {
-				if (millis() - started_waiting_at > TIMEOUT_REQ_TIME )
-					timeout = true;
-			}
-
-			if ( !timeout ){
-				unsigned long response;
-				radio.read( &response, sizeof( unsigned long ) );
-
-				if ( response == STATE_WAITING ){
-					send_tries = 0;
-				}else if ( response == STATE_IN_RACE ){
-					send_tries++;
-				} 
-			}else {
-				send_tries--;
-			}
-		}
-
-	
-
-		current_state = STATE_WAITING;
-		sleep(1);
 	}
 }
 
@@ -198,7 +210,7 @@ int main(int argc, char** argv){
 	radio.setRetries(15,15);
 	// Dump the configuration of the rf unit for debugging
 	radio.printDetails();
-	
+
 	//Open pipes
 	radio.openWritingPipe(pipes[0]);
 	radio.openReadingPipe(1,pipes[1]);

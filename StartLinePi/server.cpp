@@ -12,7 +12,6 @@
 #include <netdb.h>
 #include <thread>
 #include <mutex>
-#include <condition_variable>
 #include "nlohmann/json.hpp"
 
 #define IN_SERVER_PORT htons(1010)
@@ -89,7 +88,7 @@ bool send_race_status(){
 void start_race(){
 	if ( raceStartingSoon || inRace || !lightGateCaptured ){
 		printf("Start Race Thread: race rejected \n ");
-		
+
 		printf("Start Race Thread: raceStartingSoon: ");
 		printf( raceStartingSoon ? "true \n" : "false \n" );
 
@@ -127,7 +126,7 @@ void start_race(){
 		startRaceTime = millis();
 	}
 	raceStartingSoon = false;
-		
+
 }
 
 void handle_web_clients(){
@@ -241,14 +240,19 @@ void client_check(){
 		if ( alive_client && ( lastSyncInteraction - millis() ) > 2000 ){
 			radioLock.lock();
 			radio.stopListening();
-			
-			if ( ( millis() - lastWebClientInteraction ) < TIMEOUT_REQ_WAITING ){ 
-				printf("Client Check Thread: sending lightgate heartbeat \n");
-				radio.write( &REQ_LIGHT_GATE, sizeof( unsigned long ) );
-			}else{ 
-				printf("Client Check Thread: sending heartbeat \n");
-				radio.write( &REQ_WAIT, sizeof( unsigned long ) );
-			}	
+
+			if ( inRace ){
+				printf("Client Check Thread: sending in race heartbeat \n");
+				radio.write( &REQ_RACE, sizeof( unsigned long ) );
+			}else {
+				if ( ( millis() - lastWebClientInteraction ) < TIMEOUT_REQ_WAITING ){ 
+					printf("Client Check Thread: sending lightgate heartbeat \n");
+					radio.write( &REQ_LIGHT_GATE, sizeof( unsigned long ) );
+				}else{ 
+					printf("Client Check Thread: sending heartbeat \n");
+					radio.write( &REQ_WAIT, sizeof( unsigned long ) );
+				}	
+			}
 			radio.startListening();			
 
 			unsigned long started_waiting_at = millis();
