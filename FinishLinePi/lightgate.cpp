@@ -3,14 +3,11 @@
 #include <sstream>
 #include "lightgate.h"
 
-class LightGate {
+void LightGate::setup(){
 
-	public:
-		bool setup(){
-		
-		}
-	
-		bool read(){
-
-		}
 }
+
+bool LightGate::read(){
+	return true;
+}
+
