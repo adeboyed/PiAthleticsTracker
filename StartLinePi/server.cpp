@@ -57,7 +57,7 @@ bool client_alive(){
 
 bool send_race_status(){
 	radioLock.lock();
-	printf("Start Race Thread: sending message \n ");
+	printf("Start Race Thread: sending message \n");
 
 	radio.stopListening();
 	radio.write( &REQ_RACE, sizeof( unsigned long ) );

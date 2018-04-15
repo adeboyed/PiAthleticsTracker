@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <RF24/RF24.h>
 #include <thread>
+#include <mutex>
 #include "lightgate.h"
 
 #define LIGHTGATE_OFF 2
@@ -51,7 +52,7 @@ int lightgate_delay_rate = 2000;
 void check_lightgate(){
 	while (true){
 
-		lightgate_active = ( gate.read() ) ? LIGHTGATE_ON ? LIGHTGATE_OFF;	
+		lightgate_active = ( gate.read() ) ? LIGHTGATE_ON : LIGHTGATE_OFF;	
 		
 		if ( current_state == STATE_TIME_SYNCING ){
 			delay( LIGHT_GATE_DELAY_TIME_SYNC );
@@ -219,7 +220,7 @@ void cycle(){
 					radioLock.unlock();	
 					delay( 500 );
 				}else if ( req_code == REQ_LIGHT_GATE ){
-					current_state = STATE_LIGHT_GATE
+					current_state = STATE_LIGHT_GATE;
 
 					radio.stopListening();
 					radio.write( &lightgate_active, sizeof ( unsigned long ) );
