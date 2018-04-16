@@ -215,6 +215,7 @@ void radio_listen(){
 			if ( payload == REQ_TIME ){
 				unsigned long got_time = millis();
 				radio.write( &got_time, sizeof(unsigned long) );
+				printf("Radio Listen Thread: sent time %lu \n", got_time );
 				radio.startListening(); radioListening = true;
 				lastClientInteraction = millis();
 				lastSyncInteraction = millis();
@@ -237,7 +238,7 @@ void client_check(){
 	while (true){
 		bool alive_client = client_alive();
 		printf( alive_client ? "Client Check Thread: clientAlive \n" : "Client Check Thread: clientDead \n" ); 
-		if ( alive_client && ( lastSyncInteraction - millis() ) > 2000 ){
+		if ( alive_client && ( millis() - lastSyncInteraction ) > 2000 ){
 			radioLock.lock();
 			radio.stopListening();
 
