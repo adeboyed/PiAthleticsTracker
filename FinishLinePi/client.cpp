@@ -174,7 +174,7 @@ void cycle(){
 			}
 			radioLock.unlock();	
 			sleep(1);			
-		} else if ( current_state == STATE_WAITING || current_state == STATE_IN_RACE ) {
+		} else if ( current_state == STATE_WAITING || current_state == STATE_IN_RACE || current_state == STATE_LIGHT_GATE) {
 			radioLock.lock();
 
 			if ( current_state == STATE_WAITING ){
