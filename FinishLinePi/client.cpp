@@ -12,7 +12,7 @@
 #define LIGHTGATE_OFF 2
 #define	LIGHTGATE_ON 3
 
-#define TIMEOUT_REQ_TIME 250
+#define TIMEOUT_REQ_TIME 500
 #define TIMEOUT_REQ_WAITING 10000
 
 #define STATE_TIME_SYNCING 10
@@ -198,6 +198,8 @@ void cycle(){
 				printf("Have not recieved anything from server in 10 seconds, will enter time sync \n");
 				offset_tries = 1;
 				current_state = STATE_TIME_SYNCING;
+				delay( 10 );
+				radioLock.unlock();
 			}else {
 				unsigned long req_code;
 				radio.read( &req_code, sizeof( unsigned long ) );
@@ -218,7 +220,7 @@ void cycle(){
 					radio.startListening();
 
 					radioLock.unlock();	
-					delay( 500 );
+					delay( 50 );
 				}else if ( req_code == REQ_LIGHT_GATE ){
 					current_state = STATE_LIGHT_GATE;
 
@@ -227,7 +229,7 @@ void cycle(){
 					radio.startListening();
 
 					radioLock.unlock();	
-					delay ( 500 );
+					delay ( 50 );
 				}			
 			}	
 		}
