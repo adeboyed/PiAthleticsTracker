@@ -49,11 +49,14 @@ int current_state = STATE_TIME_SYNCING;
 
 int lightgate_delay_rate = 2000;
 
+//To be removed later
+thread simulation_thread;
+
 void check_lightgate(){
 	while (true){
 
 		lightgate_active = ( gate.read() ) ? LIGHTGATE_ON : LIGHTGATE_OFF;	
-		
+
 		if ( current_state == STATE_TIME_SYNCING ){
 			delay( LIGHT_GATE_DELAY_TIME_SYNC );
 		}else if ( current_state == STATE_WAITING ){ 
@@ -61,11 +64,57 @@ void check_lightgate(){
 		}else if ( current_state == STATE_LIGHT_GATE ){
 			delay( LIGHT_GATE_CHECK );
 		}else if ( current_state == STATE_IN_RACE ){
-			delay ( LIGHT_GATE_IN_RACE );
+			//We need to wait until the lightgate is interrupted
+			if ( !lightgate_active ){
+				radioLock.lock();
+				unsigned long measured_time = millis();
+				//Adjust Time
+				measured_time += time_offset;
+
+				int send_tries = 3;
+
+				while ( send_tries > 0 ){
+					if ( radioListening ){
+						radio.stopListening(); radioListening = false;
+					}
+
+					bool ok = radio.write( &measured_time, sizeof( unsigned long ) );
+					unsigned long started_waiting_at = millis();
+					if ( !ok ){
+						printf("Failed! Radio Error \n");
+					}
+
+					// Now, continue listening
+					radio.startListening(); radioListening = true;
+
+					// Wait here until we get a response, or timeout (250ms)
+					bool timeout = false;
+					while ( ! radio.available() && ! timeout ) {
+						if (millis() - started_waiting_at > TIMEOUT_REQ_TIME )
+							timeout = true;
+					}
+
+					if ( !timeout ){
+						unsigned long response;
+						radio.read( &response, sizeof( unsigned long ) );
+
+						if ( response == STATE_WAITING ){
+							send_tries = 0;
+						}else if ( response == STATE_IN_RACE ){
+							send_tries++;
+						}
+					}else {
+						send_tries--;
+					}
+				}
+				radioLock.unlock();				
+			}
 		}
 	}
 }
 
+
+//TO BE REMOVED
 void simulate_race(){
 	sleep(15);
 
@@ -206,6 +255,10 @@ void cycle(){
 
 				printf("Recieved %lu from the server \n", req_code );
 				if ( req_code == REQ_RACE ){
+					if ( current_state != STATE_IN_RACE ){
+						//Race has just started, we'll start the simulation thread
+						simulation_thread = thread( simulate_race ); 
+					}
 					current_state = STATE_IN_RACE;
 
 					radio.stopListening();
@@ -214,7 +267,7 @@ void cycle(){
 					radioLock.unlock();	
 				}else if ( req_code == REQ_WAIT ){
 					current_state = STATE_WAITING;
-					
+
 					radio.stopListening();
 					radio.write( &REQ_ACK, sizeof( unsigned long ) );	
 					radio.startListening();
@@ -257,9 +310,13 @@ int main(int argc, char** argv){
 	thread t1( check_lightgate );
 
 	//Thread for managing the client
-	thread t2 ( cycle );
+	thread t2( cycle );
 
 	t1.join();
 	t2.join();
+
+	if ( simulation_thread != NULL ){
+		simulation_thread.join();	
+	} 
 
 }
