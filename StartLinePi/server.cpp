@@ -109,19 +109,19 @@ void start_race(){
 	//Get client ready
 	if ( send_race_status() ){
 		// Play track for ready
-		system("omxplayer -o local sounds/ready.mp3");		
+		system("omxplayer -o local ~/sounds/ready.mp3");		
 
 		//Wait 5 seconds
 		sleep ( 5 );
 
 		//Play track for set
-		system("omxplayer -o local sounds/set.mp3");
+		system("omxplayer -o local ~/sounds/set.mp3");
 
 		//Wait between 1 and 3 seconds
 		delay( (rand() % 2000) + 1000 );
 
 		//Play track for go
-		system("omxplayer -o local sounds/go.mp3");
+		system("omxplayer -o local ~/sounds/go.mp3");
 		inRace = true;
 		startRaceTime = millis();
 	}
