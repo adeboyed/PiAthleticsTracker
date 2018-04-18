@@ -304,7 +304,12 @@ int main(int argc, char** argv){
 	//Setup lightgate
 	gate.setup();	
 
-	printf("PiAthleticsTracker: Finish Line Pi \n");
+	printf("========================================================\n");
+	printf("================== Pi AthleticsTracker =================\n");
+	printf("===================== Developed by: ====================\n");
+	printf("===================== David Adeboye ====================\n");
+	printf("================ Running Finish Line Pi ================\n");
+	printf("========================================================\n");
 
 	//Thread for checking the lightgate
 	thread t1( check_lightgate );
@@ -315,8 +320,6 @@ int main(int argc, char** argv){
 	t1.join();
 	t2.join();
 
-	if ( simulation_thread != NULL ){
-		simulation_thread.join();	
-	} 
+	simulation_thread.join();	
 
 }

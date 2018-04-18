@@ -318,7 +318,12 @@ int main(int argc, char** argv){
 	//Turn up the volume
 	system("amixer set PCM -- 100%");
 
-	printf("PiAthleticsTracker: Start Line Pi \n");
+	printf("========================================================\n");
+	printf("================== Pi AthleticsTracker =================\n");
+	printf("===================== Developed by: ====================\n");
+	printf("===================== David Adeboye ====================\n");
+	printf("================= Running Start Line Pi ================\n");
+	printf("========================================================\n");
 
 	//Start threads for web client socket server
 	thread t1( handle_web_clients );
